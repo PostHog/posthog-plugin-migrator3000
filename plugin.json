@@ -1,0 +1,32 @@
+{
+    "name": "Migrator 3000",
+    "url": "https://github.com/PostHog/posthog-plugin-migrator",
+    "description": "Migrate",
+    "main": "index.ts",
+    "config": [
+        {
+            "key": "host",
+            "hint": "E.g. posthog.yourcompany.com",
+            "name": "Host",
+            "type": "string",
+            "required": true
+        },
+        {
+            "key": "project_api_key",
+            "hint": "Grab it from e.g. https://posthog.yourcompany.com/project/settings",
+            "name": "Project API Key",
+            "type": "string",
+            "required": true
+        }
+    ],
+    "publicJobs": {
+        "Migrate events to a new instance": {
+          "payload": {
+            "Start date": { 
+                "type": "date",
+                "required": true
+            }   
+          }
+        }
+      }
+}
