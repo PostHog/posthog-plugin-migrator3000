@@ -12,21 +12,18 @@
             "required": true
         },
         {
-            "key": "project_api_key",
+            "key": "projectApiKey",
             "hint": "Grab it from e.g. https://posthog.yourcompany.com/project/settings",
             "name": "Project API Key",
             "type": "string",
             "required": true
-        }
-    ],
-    "publicJobs": {
-        "Migrate events to a new instance": {
-          "payload": {
-            "Start date": { 
-                "type": "date",
-                "required": true
-            }   
-          }
-        }
+        },
+        {
+          "key": "startDate",
+          "hint": "Use format YYYY-MM-DD e.g. 2021-10-26 = 26th October 2021. Not specifying a value will export all events.",
+          "name": "Date to start exporting events from",
+          "type": "string",
+          "required": false
       }
+    ]
 }
