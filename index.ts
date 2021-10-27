@@ -23,6 +23,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
     // every hour, check if we're done exporting the previous range and 
     // if not, start a new job to export from the last max to now
     runEveryHour: async ({ storage, jobs }) => {
+        // this "magic" key is added via the historical export upgrade
         const isExportRunning = await storage.get('is_export_running', false)
         if (isExportRunning) {
             return
@@ -35,6 +36,8 @@ const plugin: Plugin<Migrator3000MetaInput> = {
         const newMaxDate = new Date(Date.now()).toISOString()
         console.log(`Now starting export of events from ${previousMaxDate} to ${newMaxDate}`)
         await storage.set('current_max_date', newMaxDate)
+
+        // "magic" job added via the historical export upgrade
         await jobs['Export historical events']({
             dateFrom: previousMaxDate,
             dateTo: newMaxDate,

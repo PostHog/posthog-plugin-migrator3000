@@ -1,7 +1,7 @@
 {
     "name": "Migrator 3000",
-    "url": "https://github.com/PostHog/posthog-plugin-migrator",
-    "description": "Migrate",
+    "url": "https://github.com/PostHog/posthog-plugin-migrator3000",
+    "description": "Migrate your PostHog events to a new instance.",
     "main": "index.ts",
     "config": [
         {

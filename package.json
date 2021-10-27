@@ -1,18 +1,18 @@
 {
-    "name": "posthog-plugin-replicator",
-    "version": "1.1.1",
-    "description": "Replicate PostHog event stream in another PostHog instance",
+    "name": "posthog-plugin-migrator3000",
+    "version": "0.0.1",
+    "description": "Migrate your PostHog events to a new instance.",
     "keywords": [
         "posthog",
         "plugin",
-        "replication"
+        "migration"
     ],
     "main": "index.ts",
-    "repository": "github:PostHog/posthog-plugin-replicator",
+    "repository": "github:PostHog/posthog-plugin-migrator3000",
     "bugs": {
-        "url": "https://github.com/PostHog/posthog-plugin-replicator/issues"
+        "url": "https://github.com/PostHog/posthog-plugin-migrator3000/issues"
     },
-    "homepage": "https://github.com/PostHog/posthog-plugin-replicator#readme",
+    "homepage": "https://github.com/PostHog/posthog-plugin-migrator3000#readme",
     "author": "PostHog <hey@posthog.com>",
     "scripts": {
         "test": "jest .",
