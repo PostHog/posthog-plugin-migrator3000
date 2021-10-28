@@ -4,7 +4,7 @@ import fetch from 'node-fetch'
 export interface Migrator3000MetaInput {
     global: {
         startDate: string
-    },
+    }
     config: {
         host: string
         projectApiKey: string
@@ -18,47 +18,32 @@ interface PluginEventExtra extends PluginEvent {
     api_key?: string
 }
 
+const TEN_MINUTES = 10 * 60 * 1000
+
 const plugin: Plugin<Migrator3000MetaInput> = {
+    runEveryMinute: async ({ global, jobs, storage, cache }) => {
+        const currentDate = new Date()
+        const lastRun = await cache.get('last_run', null)
+        if (!lastRun || currentDate.getTime() - Number(lastRun) > TEN_MINUTES) {
+            // this "magic" key is added via the historical export upgrade
+            const isExportRunning = await storage.get('is_export_running', false)
+            if (isExportRunning) {
+                return
+            }
 
-    // every hour, check if we're done exporting the previous range and 
-    // if not, start a new job to export from the last max to now
-    runEveryHour: async ({ storage, jobs }) => {
-        // this "magic" key is added via the historical export upgrade
-        const isExportRunning = await storage.get('is_export_running', false)
-        if (isExportRunning) {
-            return
-        }
-        const previousMaxDate = await storage.get('max_date', null)
-        if (!previousMaxDate) {
-            throw new Error('How did you get here?')
-        }
+            const previousMaxDate = await storage.get('max_date', global.startDate)
 
-        const newMaxDate = new Date(Date.now()).toISOString()
-        console.log(`Now starting export of events from ${previousMaxDate} to ${newMaxDate}`)
-        await storage.set('current_max_date', newMaxDate)
-
-        // "magic" job added via the historical export upgrade
-        await jobs['Export historical events']({
-            dateFrom: previousMaxDate,
-            dateTo: newMaxDate,
-        }).runNow()
-    },
-
-    // used to provide near-immediate feedback to users that their export has started
-    runEveryMinute: async ({ global, jobs, utils, storage }) => {
-        await utils.cursor.init('initial_run')
-        const cursor = await utils.cursor.increment('initial_run')
-        if (cursor === 1) {
-            const maxDate = new Date(Date.now()).toISOString()
-            console.log(`Starting export of historical events from ${global.startDate}`)
-            await storage.set('current_max_date', maxDate)
             await jobs['Export historical events']({
-                dateFrom: global.startDate,
-                dateTo: maxDate,
+                dateFrom: previousMaxDate,
+                dateTo: currentDate.toISOString(),
             }).runNow()
+
+            console.log(`Now starting export of events from ${previousMaxDate} to ${currentDate.toISOString()}`)
+            await storage.set('current_max_date', currentDate.toISOString())
+            await cache.set('last_run', currentDate.getTime())
         }
     },
-    
+
     setupPlugin: async ({ config, global }) => {
         try {
             global.startDate = new Date(config.startDate).toISOString()
@@ -68,7 +53,6 @@ const plugin: Plugin<Migrator3000MetaInput> = {
         }
     },
     exportEvents: async (events: PluginEventExtra[], { config }) => {
-
         // dont export live events, only historical ones
         if (events.length > 0 && events[0].uuid) {
             return
