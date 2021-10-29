@@ -39,7 +39,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             }).runNow()
 
             console.log(`Now starting export of events from ${previousMaxDate} to ${currentDate.toISOString()}`)
-            await storage.set('current_max_date', currentDate.toISOString())
+            await storage.set('max_date', currentDate.toISOString())
             await cache.set('last_run', currentDate.getTime())
         }
     },
