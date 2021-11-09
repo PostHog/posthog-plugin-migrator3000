@@ -24,6 +24,15 @@
           "name": "Date to start exporting events from",
           "type": "string",
           "required": false
-      }
+        },
+        {
+          "key": "debug",
+          "hint": "Turn this on to get additional logging from the plugin",
+          "name": "DEBUG",
+          "type": "choice",
+          "choices": ["ON", "OFF"],
+          "default": "OFF",
+          "required": false
+        }
     ]
 }

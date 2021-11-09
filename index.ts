@@ -4,11 +4,13 @@ import fetch from 'node-fetch'
 export interface Migrator3000MetaInput {
     global: {
         startDate: string
+        debug: boolean
     }
     config: {
         host: string
         projectApiKey: string
         startDate: string
+        debug: 'ON' | 'OFF'
     }
 }
 
@@ -51,8 +53,9 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             console.log(`Failed to parse start date. Make sure to use the format YYYY-MM-DD`)
             throw e
         }
+        global.debug = config.debug === 'ON'
     },
-    exportEvents: async (events: PluginEventExtra[], { config }) => {
+    exportEvents: async (events: PluginEventExtra[], { config, global }) => {
         // dont export live events, only historical ones
         if (events.length > 0 && events[0].uuid) {
             return
@@ -69,13 +72,20 @@ const plugin: Plugin<Migrator3000MetaInput> = {
         }
 
         if (batch.length > 0) {
-            await fetch(`https://${config.host}/e`, {
+            const res = await fetch(`https://${config.host}/e`, {
                 method: 'POST',
                 body: JSON.stringify(batch),
                 headers: { 'Content-Type': 'application/json' },
             })
+            if (global.debug) {
+                const jsonRes = await res.json()
+                console.log('RESPONSE:', jsonRes)
+            }
             console.log(`Flushing ${batch.length} event${batch.length > 1 ? 's' : ''} to ${config.host}`)
+        } else if (global.debug) {
+            console.log('Skipping empty batch of events')
         }
+
     },
 }
 
