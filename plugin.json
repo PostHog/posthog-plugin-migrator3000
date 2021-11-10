@@ -33,6 +33,14 @@
           "choices": ["ON", "OFF"],
           "default": "OFF",
           "required": false
+        },
+        {
+          "key": "posthogVersion",
+          "hint": "The PostHog version this instance is on. Format: x.y.z",
+          "name": "PostHog version",
+          "type": "string",
+          "default": "1.29.0",
+          "required": false
         }
     ]
 }

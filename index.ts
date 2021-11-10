@@ -5,12 +5,15 @@ export interface Migrator3000MetaInput {
     global: {
         startDate: string
         debug: boolean
+        versionMinor: number
+        versionMajor: number
     }
     config: {
         host: string
         projectApiKey: string
         startDate: string
         debug: 'ON' | 'OFF'
+        posthogVersion: string
     }
 }
 
@@ -54,12 +57,27 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             throw e
         }
         global.debug = config.debug === 'ON'
+        try {
+            const parsedVersion = config.posthogVersion.split('.').map(digit => Number(digit))
+            global.versionMajor = parsedVersion[0]
+            global.versionMinor = parsedVersion[1]
+        } catch (e) {
+            throw new Error('Invalid PostHog version')
+        }
     },
     exportEvents: async (events: PluginEventExtra[], { config, global }) => {
         // dont export live events, only historical ones
-        if (events.length > 0 && events[0].uuid) {
+        if (events.length === 0) {
             return
         }
+        if (global.versionMajor > 1 || (global.versionMajor === 1 && global.versionMinor > 29)) {
+            if (events[0].properties && events[0].properties['$$is_historical_export_event']) {
+                return
+            }
+        } else if (events[0].uuid) {
+            return
+        }
+
         const batch = []
         for (const event of events) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
