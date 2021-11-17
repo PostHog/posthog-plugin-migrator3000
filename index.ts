@@ -70,7 +70,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
         if (events.length === 0) {
             return
         }
-        if (global.versionMajor > 1 || (global.versionMajor === 1 && global.versionMinor > 29)) {
+        if (global.versionMajor > 1 || (global.versionMajor === 1 && global.versionMinor >= 29)) {
             if (!events[0].properties || !events[0].properties['$$is_historical_export_event']) {
                 return
             }
