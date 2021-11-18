@@ -85,7 +85,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
                 ...event,
                 token: config.projectApiKey,
             }
-            sendableEvent.timestamp = new Date(event.timestamp || Date.now()).toISOString()
+            sendableEvent.timestamp = event.timestamp || new Date(Date.now()).toISOString()
             batch.push(sendableEvent)
         }
 
