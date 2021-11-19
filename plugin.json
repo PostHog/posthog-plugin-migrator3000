@@ -42,5 +42,8 @@
           "default": "1.29.0",
           "required": false
         }
-    ]
+    ],
+    "publicJobs": {
+      "[ADVANCED] Force restart": {}
+    }
 }
