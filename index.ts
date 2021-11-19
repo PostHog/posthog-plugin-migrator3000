@@ -26,6 +26,22 @@ interface PluginEventExtra extends PluginEvent {
 const TEN_MINUTES = 10 * 60 * 1000
 
 const plugin: Plugin<Migrator3000MetaInput> = {
+    jobs: {
+        '[ADVANCED] Force restart': async ({ storage, jobs }) => {
+            await storage.del('is_export_running')
+            const cursor = await storage.get('timestamp_cursor', null)
+            if (cursor) {
+                const dateFrom = new Date(cursor).toISOString()
+                console.log(`Restarting export from ${dateFrom}`)
+                await jobs['Export historical events']({
+                    dateFrom,
+                    dateTo: new Date().toISOString(),
+                }).runNow()
+            } else {
+                throw new Error('Unable to restart correctly')
+            }
+        }
+    },
     runEveryMinute: async ({ global, jobs, storage, cache }) => {
         const currentDate = new Date()
         const lastRun = await cache.get('last_run', null)
