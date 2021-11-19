@@ -27,7 +27,7 @@ const TEN_MINUTES = 10 * 60 * 1000
 
 const plugin: Plugin<Migrator3000MetaInput> = {
     jobs: {
-        '[ADVANCED] Force restart': async ({ storage, jobs }) => {
+        '[ADVANCED] Force restart': async (_, { storage, jobs }) => {
             await storage.del('is_export_running')
             const cursor = await storage.get('timestamp_cursor', null)
             if (cursor) {
