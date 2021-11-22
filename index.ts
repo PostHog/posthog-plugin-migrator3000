@@ -25,13 +25,20 @@ interface PluginEventExtra extends PluginEvent {
 
 const TEN_MINUTES = 10 * 60 * 1000
 
+const ELEMENT_TRANSFORMATIONS: Record<string, string> = {
+    text: '$el_text',
+    attr_class: 'attr__class',
+    attr_id: 'attr__id',
+    href: 'attr__href'
+}
+
 const plugin: Plugin<Migrator3000MetaInput> = {
     jobs: {
         '[ADVANCED] Force restart': async (_, { storage, jobs }) => {
             await storage.del('is_export_running')
             const cursor = await storage.get('timestamp_cursor', null)
             if (cursor) {
-                const dateFrom = new Date(cursor).toISOString()
+                const dateFrom = new Date(Number(cursor)).toISOString()
                 console.log(`Restarting export from ${dateFrom}`)
                 await jobs['Export historical events']({
                     dateFrom,
@@ -100,6 +107,22 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             const { team_id, now, offset, sent_at, $token, project_id, api_key, ...sendableEvent } = {
                 ...event,
                 token: config.projectApiKey,
+            }
+
+
+            if (sendableEvent.properties && sendableEvent.properties.$elements) {
+                const newElements = []
+                for (const element of sendableEvent.properties.$elements) {
+                    for (const [key, val] of Object.entries(element)) {
+                        if (key in ELEMENT_TRANSFORMATIONS) {
+                            element[ELEMENT_TRANSFORMATIONS[key]] = val
+                            delete element[key]
+                        }
+                    }
+                    delete element['attributes']
+                    newElements.push(element)
+                }
+                sendableEvent.properties.$elements = newElements
             }
             sendableEvent.timestamp = event.timestamp || new Date(Date.now()).toISOString()
             batch.push(sendableEvent)
