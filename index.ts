@@ -51,8 +51,8 @@ const parseAndSendEvents = async (events: PluginEventExtra[], { config, global }
                         delete element[key]
                     }
                 }
+                newElements.push({ ...element.attributes, ...element })
                 delete element['attributes']
-                newElements.push(element)
             }
             sendableEvent.properties.$elements = newElements
         }
