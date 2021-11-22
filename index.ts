@@ -32,6 +32,50 @@ const ELEMENT_TRANSFORMATIONS: Record<string, string> = {
     href: 'attr__href'
 }
 
+const parseAndSendEvents = async (events: PluginEventExtra[], { config, global }: Migrator3000MetaInput) => {
+    const batch = []
+    for (const event of events) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { team_id, now, offset, sent_at, $token, project_id, api_key, ...sendableEvent } = {
+            ...event,
+            token: config.projectApiKey,
+        }
+
+
+        if (sendableEvent.properties && sendableEvent.properties.$elements) {
+            const newElements = []
+            for (const element of sendableEvent.properties.$elements) {
+                for (const [key, val] of Object.entries(element)) {
+                    if (key in ELEMENT_TRANSFORMATIONS) {
+                        element[ELEMENT_TRANSFORMATIONS[key]] = val
+                        delete element[key]
+                    }
+                }
+                delete element['attributes']
+                newElements.push(element)
+            }
+            sendableEvent.properties.$elements = newElements
+        }
+        sendableEvent.timestamp = event.timestamp || new Date(Date.now()).toISOString()
+        batch.push(sendableEvent)
+    }
+
+    if (batch.length > 0) {
+        const res = await fetch(`https://${config.host}/e`, {
+            method: 'POST',
+            body: JSON.stringify(batch),
+            headers: { 'Content-Type': 'application/json' },
+        })
+        if (global.debug) {
+            const jsonRes = await res.json()
+            console.log('RESPONSE:', jsonRes)
+        }
+        console.log(`Flushing ${batch.length} event${batch.length > 1 ? 's' : ''} to ${config.host}`)
+    } else if (global.debug) {
+        console.log('Skipping empty batch of events')
+    }
+}
+
 const plugin: Plugin<Migrator3000MetaInput> = {
     jobs: {
         '[ADVANCED] Force restart': async (_, { storage, jobs }) => {
@@ -47,6 +91,9 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             } else {
                 throw new Error('Unable to restart correctly')
             }
+        },
+        parseAndSendEvents: async (payload, meta) => {
+            await parseAndSendEvents(payload.events, meta)
         }
     },
     runEveryMinute: async ({ global, jobs, storage, cache }) => {
@@ -88,11 +135,12 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             throw new Error('Invalid PostHog version')
         }
     },
-    exportEvents: async (events: PluginEventExtra[], { config, global }) => {
-        // dont export live events, only historical ones
+    exportEvents: async (events: PluginEventExtra[], { global, jobs }) => {
         if (events.length === 0) {
             return
         }
+
+        // dont export live events, only historical ones
         if (global.versionMajor > 1 || (global.versionMajor === 1 && global.versionMinor > 29)) {
             if (!events[0].properties || !events[0].properties['$$is_historical_export_event']) {
                 return
@@ -101,48 +149,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             return
         }
 
-        const batch = []
-        for (const event of events) {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { team_id, now, offset, sent_at, $token, project_id, api_key, ...sendableEvent } = {
-                ...event,
-                token: config.projectApiKey,
-            }
-
-
-            if (sendableEvent.properties && sendableEvent.properties.$elements) {
-                const newElements = []
-                for (const element of sendableEvent.properties.$elements) {
-                    for (const [key, val] of Object.entries(element)) {
-                        if (key in ELEMENT_TRANSFORMATIONS) {
-                            element[ELEMENT_TRANSFORMATIONS[key]] = val
-                            delete element[key]
-                        }
-                    }
-                    delete element['attributes']
-                    newElements.push(element)
-                }
-                sendableEvent.properties.$elements = newElements
-            }
-            sendableEvent.timestamp = event.timestamp || new Date(Date.now()).toISOString()
-            batch.push(sendableEvent)
-        }
-
-        if (batch.length > 0) {
-            const res = await fetch(`https://${config.host}/e`, {
-                method: 'POST',
-                body: JSON.stringify(batch),
-                headers: { 'Content-Type': 'application/json' },
-            })
-            if (global.debug) {
-                const jsonRes = await res.json()
-                console.log('RESPONSE:', jsonRes)
-            }
-            console.log(`Flushing ${batch.length} event${batch.length > 1 ? 's' : ''} to ${config.host}`)
-        } else if (global.debug) {
-            console.log('Skipping empty batch of events')
-        }
-
+        await jobs.parseAndSendEvents({ events }).runNow()
     },
 }
 
