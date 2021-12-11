@@ -5,4 +5,3 @@
 
 Migrate your events to a new PostHog instance.
 
-Currently looking for Alpha testers.
