@@ -127,6 +127,13 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             throw e
         }
         global.debug = config.debug === 'ON'
+
+        if (config.posthogVersion === "Latest" || config.posthogVersion === "1.30.0+") {
+            global.versionMajor = 1
+            global.versionMinor = 31
+            return
+        }
+
         try {
             const parsedVersion = config.posthogVersion.split('.').map(digit => Number(digit))
             global.versionMajor = parsedVersion[0]
