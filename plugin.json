@@ -36,10 +36,11 @@
         },
         {
           "key": "posthogVersion",
-          "hint": "The PostHog version this instance is on. Format: x.y.z",
+          "hint": "The PostHog version this instance is on. Format: x.y.z. Select 'Latest' when using this in PostHog Cloud.",
           "name": "PostHog version",
-          "type": "string",
-          "default": "1.29.0",
+          "type": "choice",
+          "choices": ["1.29.0", "1.30.0", "1.30.0+", "Latest"]
+          "default": "Latest",
           "required": false
         }
     ],
