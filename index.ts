@@ -121,7 +121,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
 
     setupPlugin: async ({ config, global }) => {
         try {
-            global.startDate = new Date(config.startDate).toISOString()
+            global.startDate = config.startDate ? new Date(config.startDate).toISOString() : null
         } catch (e) {
             console.log(`Failed to parse start date. Make sure to use the format YYYY-MM-DD`)
             throw e
