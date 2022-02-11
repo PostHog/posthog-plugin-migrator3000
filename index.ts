@@ -67,8 +67,8 @@ const parseAndSendEvents = async (events: PluginEventExtra[], { config, global }
             headers: { 'Content-Type': 'application/json' },
         })
         if (global.debug) {
-            const jsonRes = await res.json()
-            console.log('RESPONSE:', jsonRes)
+            const textRes = await res.text()
+            console.log('RESPONSE:', textRes)
         }
         console.log(`Flushing ${batch.length} event${batch.length > 1 ? 's' : ''} to ${config.host}`)
     } else if (global.debug) {
