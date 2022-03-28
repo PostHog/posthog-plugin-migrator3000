@@ -28,7 +28,7 @@
         {
             "key": "endDate",
             "hint": "Use format YYYY-MM-DD e.g. 2021-10-26 = 26th October 2021. Not specifying a value will export all events.",
-            "name": "Date to end exporting events from",
+            "name": "Date up to which events will be exported",
             "type": "string",
             "required": false
         },
