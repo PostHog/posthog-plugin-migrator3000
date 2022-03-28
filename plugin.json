@@ -19,32 +19,39 @@
             "required": true
         },
         {
-          "key": "startDate",
-          "hint": "Use format YYYY-MM-DD e.g. 2021-10-26 = 26th October 2021. Not specifying a value will export all events.",
-          "name": "Date to start exporting events from",
-          "type": "string",
-          "required": false
+            "key": "startDate",
+            "hint": "Use format YYYY-MM-DD e.g. 2021-10-26 = 26th October 2021. Not specifying a value will export all events.",
+            "name": "Date to start exporting events from",
+            "type": "string",
+            "required": false
         },
         {
-          "key": "debug",
-          "hint": "Turn this on to get additional logging from the plugin",
-          "name": "DEBUG",
-          "type": "choice",
-          "choices": ["ON", "OFF"],
-          "default": "OFF",
-          "required": false
+            "key": "endDate",
+            "hint": "Use format YYYY-MM-DD e.g. 2021-10-26 = 26th October 2021. Not specifying a value will export all events.",
+            "name": "Date to end exporting events from",
+            "type": "string",
+            "required": false
         },
         {
-          "key": "posthogVersion",
-          "hint": "The PostHog version this instance is on. Format: x.y.z. Select 'Latest' when using this in PostHog Cloud.",
-          "name": "PostHog version",
-          "type": "choice",
-          "choices": ["1.29.0", "1.30.0", "1.30.0+", "Latest"],
-          "default": "Latest",
-          "required": false
+            "key": "debug",
+            "hint": "Turn this on to get additional logging from the plugin",
+            "name": "DEBUG",
+            "type": "choice",
+            "choices": ["ON", "OFF"],
+            "default": "OFF",
+            "required": false
+        },
+        {
+            "key": "posthogVersion",
+            "hint": "The PostHog version this instance is on. Format: x.y.z. Select 'Latest' when using this in PostHog Cloud.",
+            "name": "PostHog version",
+            "type": "choice",
+            "choices": ["1.29.0", "1.30.0", "1.30.0+", "Latest"],
+            "default": "Latest",
+            "required": false
         }
     ],
     "publicJobs": {
-      "[ADVANCED] Force restart": {}
+        "[ADVANCED] Force restart": {}
     }
 }

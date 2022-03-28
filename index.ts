@@ -3,7 +3,8 @@ import fetch from 'node-fetch'
 
 export interface Migrator3000MetaInput {
     global: {
-        startDate: string
+        startDate: string | null
+        endDate: string | null
         debug: boolean
         versionMinor: number
         versionMajor: number
@@ -11,7 +12,8 @@ export interface Migrator3000MetaInput {
     config: {
         host: string
         projectApiKey: string
-        startDate: string
+        startDate: string | null
+        endDate: string | null
         debug: 'ON' | 'OFF'
         posthogVersion: string
     }
@@ -29,7 +31,7 @@ const ELEMENT_TRANSFORMATIONS: Record<string, string> = {
     text: '$el_text',
     attr_class: 'attr__class',
     attr_id: 'attr__id',
-    href: 'attr__href'
+    href: 'attr__href',
 }
 
 const parseAndSendEvents = async (events: PluginEventExtra[], { config, global }: Migrator3000MetaInput) => {
@@ -40,7 +42,6 @@ const parseAndSendEvents = async (events: PluginEventExtra[], { config, global }
             ...event,
             token: config.projectApiKey,
         }
-
 
         if (sendableEvent.properties && sendableEvent.properties.$elements) {
             const newElements = []
@@ -94,10 +95,11 @@ const plugin: Plugin<Migrator3000MetaInput> = {
         },
         parseAndSendEvents: async (payload, meta) => {
             await parseAndSendEvents(payload.events, meta)
-        }
+        },
     },
     runEveryMinute: async ({ global, jobs, storage, cache }) => {
         const currentDate = new Date()
+        const endDate = global.endDate ? global.endDate : new Date().toISOString()
         const lastRun = await cache.get('last_run', null)
         if (!lastRun || currentDate.getTime() - Number(lastRun) > TEN_MINUTES) {
             // this "magic" key is added via the historical export upgrade
@@ -110,11 +112,11 @@ const plugin: Plugin<Migrator3000MetaInput> = {
 
             await jobs['Export historical events']({
                 dateFrom: previousMaxDate,
-                dateTo: currentDate.toISOString(),
+                dateTo: endDate,
             }).runNow()
 
-            console.log(`Now starting export of events from ${previousMaxDate} to ${currentDate.toISOString()}`)
-            await storage.set('max_date', currentDate.toISOString())
+            console.log(`Now starting export of events from ${previousMaxDate} to ${endDate}`)
+            await storage.set('max_date', endDate)
             await cache.set('last_run', currentDate.getTime())
         }
     },
@@ -126,16 +128,24 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             console.log(`Failed to parse start date. Make sure to use the format YYYY-MM-DD`)
             throw e
         }
+
+        try {
+            global.endDate = config.endDate ? new Date(config.endDate).toISOString() : null
+        } catch (e) {
+            console.log(`Failed to parse end date. Make sure to use the format YYYY-MM-DD`)
+            throw e
+        }
+
         global.debug = config.debug === 'ON'
 
-        if (config.posthogVersion === "Latest" || config.posthogVersion === "1.30.0+") {
+        if (config.posthogVersion === 'Latest' || config.posthogVersion === '1.30.0+') {
             global.versionMajor = 1
             global.versionMinor = 31
             return
         }
 
         try {
-            const parsedVersion = config.posthogVersion.split('.').map(digit => Number(digit))
+            const parsedVersion = config.posthogVersion.split('.').map((digit) => Number(digit))
             global.versionMajor = parsedVersion[0]
             global.versionMinor = parsedVersion[1]
         } catch (e) {

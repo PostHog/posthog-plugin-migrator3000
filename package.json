@@ -1,6 +1,6 @@
 {
     "name": "posthog-plugin-migrator3000",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Migrate your PostHog events to a new instance.",
     "keywords": [
         "posthog",
