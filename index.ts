@@ -3,16 +3,12 @@ import fetch from 'node-fetch'
 
 export interface Migrator3000MetaInput {
     global: {
-        startDate: string
-        debug: boolean
         versionMinor: number
         versionMajor: number
     }
     config: {
         host: string
         projectApiKey: string
-        startDate: string
-        debug: 'ON' | 'OFF'
         posthogVersion: string
     }
 }
@@ -22,8 +18,6 @@ interface PluginEventExtra extends PluginEvent {
     project_id?: string
     api_key?: string
 }
-
-const TEN_MINUTES = 10 * 60 * 1000
 
 const ELEMENT_TRANSFORMATIONS: Record<string, string> = {
     text: '$el_text',
@@ -66,68 +60,12 @@ const parseAndSendEvents = async (events: PluginEventExtra[], { config, global }
             body: JSON.stringify(batch),
             headers: { 'Content-Type': 'application/json' },
         })
-        if (global.debug) {
-            const textRes = await res.text()
-            console.log('RESPONSE:', textRes)
-        }
         console.log(`Flushing ${batch.length} event${batch.length > 1 ? 's' : ''} to ${config.host}`)
-    } else if (global.debug) {
-        console.log('Skipping empty batch of events')
     }
 }
 
 const plugin: Plugin<Migrator3000MetaInput> = {
-    jobs: {
-        '[ADVANCED] Force restart': async (_, { storage, jobs }) => {
-            await storage.del('is_export_running')
-            const cursor = await storage.get('timestamp_cursor', null)
-            if (cursor) {
-                const dateFrom = new Date(Number(cursor)).toISOString()
-                console.log(`Restarting export from ${dateFrom}`)
-                await jobs['Export historical events']({
-                    dateFrom,
-                    dateTo: new Date().toISOString(),
-                }).runNow()
-            } else {
-                throw new Error('Unable to restart correctly')
-            }
-        },
-        parseAndSendEvents: async (payload, meta) => {
-            await parseAndSendEvents(payload.events, meta)
-        }
-    },
-    runEveryMinute: async ({ global, jobs, storage, cache }) => {
-        const currentDate = new Date()
-        const lastRun = await cache.get('last_run', null)
-        if (!lastRun || currentDate.getTime() - Number(lastRun) > TEN_MINUTES) {
-            // this "magic" key is added via the historical export upgrade
-            const isExportRunning = await storage.get('is_export_running', false)
-            if (isExportRunning) {
-                return
-            }
-
-            const previousMaxDate = await storage.get('max_date', global.startDate)
-
-            await jobs['Export historical events']({
-                dateFrom: previousMaxDate,
-                dateTo: currentDate.toISOString(),
-            }).runNow()
-
-            console.log(`Now starting export of events from ${previousMaxDate} to ${currentDate.toISOString()}`)
-            await storage.set('max_date', currentDate.toISOString())
-            await cache.set('last_run', currentDate.getTime())
-        }
-    },
-
     setupPlugin: async ({ config, global }) => {
-        try {
-            global.startDate = config.startDate ? new Date(config.startDate).toISOString() : null
-        } catch (e) {
-            console.log(`Failed to parse start date. Make sure to use the format YYYY-MM-DD`)
-            throw e
-        }
-        global.debug = config.debug === 'ON'
-
         if (config.posthogVersion === "Latest" || config.posthogVersion === "1.30.0+") {
             global.versionMajor = 1
             global.versionMinor = 31
@@ -142,13 +80,13 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             throw new Error('Invalid PostHog version')
         }
     },
-    exportEvents: async (events: PluginEventExtra[], { global, jobs }) => {
+    exportEvents: async (events: PluginEventExtra[], meta) => {
         if (events.length === 0) {
             return
         }
 
         // dont export live events, only historical ones
-        if (global.versionMajor > 1 || (global.versionMajor === 1 && global.versionMinor > 29)) {
+        if (meta.global.versionMajor > 1 || (meta.global.versionMajor === 1 && meta.global.versionMinor > 29)) {
             if (!events[0].properties || !events[0].properties['$$is_historical_export_event']) {
                 return
             }
@@ -156,7 +94,7 @@ const plugin: Plugin<Migrator3000MetaInput> = {
             return
         }
 
-        await jobs.parseAndSendEvents({ events }).runNow()
+        await parseAndSendEvents(events, meta)
     },
 }
 
