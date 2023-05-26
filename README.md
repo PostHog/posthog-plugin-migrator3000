@@ -1,3 +1,4 @@
+**This app is no longer available on PostHog cloud, use [Replicator](https://github.com/posthog/posthog-plugin-replicator) instead.**
 
 <img src="logo.png" width="100px" />
 
